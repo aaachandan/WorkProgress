@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ray Services - Work Progress Tracker</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#fff;
+      --primary:#007bff;
+      --accent:#28a745;
+      --border:#e3e8ef;
+    }
+    body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0;color:#222;}
+    .container{max-width:900px;margin:40px auto;padding:20px;}
+    header{text-align:center;margin-bottom:20px;}
+    h1{margin:0;font-size:26px;color:var(--primary);}
+    .small{color:#555;font-size:14px;}
+    .card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 6px 20px rgba(0,0,0,0.08);}
+    .details{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:20px;}
+    .details div{flex:1 1 250px;}
+    .detail-item span{font-weight:600;color:#333;}
+    .progress-bar{height:14px;background:#e9edf5;border-radius:10px;overflow:hidden;margin-top:5px;}
+    .progress-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),#4a90e2);width:0%;transition:width .4s;}
+    .stages{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+    .stage{border:1px solid var(--border);padding:14px;border-radius:12px;background:#fdfdfd;display:flex;flex-direction:column;gap:10px;}
+    .stage h3{margin:0;font-size:16px;color:#222;}
+    .status{padding:6px 10px;border-radius:8px;font-weight:600;width:max-content;}
+    .s-pending{background:#FFF7E6;color:#8a6a00;}
+    .s-inprogress{background:#E8F0FF;color:var(--primary);}
+    .s-done{background:#EAF9EE;color:var(--accent);}
+    button{cursor:pointer;padding:7px 12px;border:none;border-radius:8px;font-weight:500;}
+    .btn-primary{background:var(--primary);color:#fff;}
+    .btn-ghost{background:transparent;color:var(--primary);border:1px solid #d0dbff;}
+    textarea{width:100%;height:100px;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:10px;}
+    footer{margin-top:20px;text-align:center;color:#666;font-size:14px;}
+    #loginCard input{width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid var(--border);}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Ray Services — Work Progress Tracker</h1>
+      <p class="small">ग्राहक और एडमिन दोनों के लिए आसान प्रगति ट्रैकिंग सिस्टम</p>
+    </header>
+
+    <!-- Customer Login -->
+    <div class="card" id="loginCard">
+      <h3>🔍 Work Progress Check (Customer View)</h3>
+      <input type="text" id="clientSearch" placeholder="Enter Client Name or Mobile Number">
+      <button class="btn-primary" onclick="findClient()">Check Progress</button>
+      <hr>
+      <h3>🛠️ Admin Login</h3>
+      <input type="password" id="adminPass" placeholder="Enter Admin Password">
+      <button class="btn-ghost" onclick="adminLogin()">Login as Admin</button>
+    </div>
+
+    <!-- Work Tracker Card -->
+    <div class="card" id="trackerCard" style="display:none;">
+      <div class="details">
+        <div class="detail-item"><span>Order ID:</span> <span id="orderId">ORD-0001</span></div>
+        <div class="detail-item"><span>Client Name:</span> <span id="clientName">[Client Name]</span></div>
+        <div class="detail-item"><span>Expected Delivery:</span> <span id="deliveryDate">--/--/----</span></div>
+        <div class="detail-item"><span>Last Updated:</span> <span id="lastUpdated">-</span></div>
+      </div>
+
+      <div>
+        <div class="small">Overall Progress</div>
+        <div class="progress-bar"><i id="progressBar"></i></div>
+        <div class="small" style="text-align:right;margin-top:4px;" id="percentTxt">0%</div>
+      </div>
+
+      <div class="stages" id="stages"></div>
+
+      <div>
+        <label class="small">Notes for Customer:</label>
+        <textarea id="note" placeholder="यदि आप ग्राहक के लिए कोई संदेश जोड़ना चाहते हैं तो यहाँ लिखें..."></textarea>
+      </div>
+
+      <div id="adminButtons" style="display:none;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px;">
+        <button class="btn-primary" id="saveBtn">💾 Save</button>
+        <button class="btn-ghost" id="resetBtn">♻️ Reset</button>
+        <button class="btn-primary" id="copyBtn">📋 Copy WhatsApp Text</button>
+      </div>
+
+      <footer>Developed by <strong>Ray Services</strong></footer>
+    </div>
+  </div>
+
+  <script>
+    const STAGES = [
+      {key:'advance', title:'Advance Payment', hi:'एडवांस भुगतान'},
+      {key:'design', title:'Design Approval', hi:'डिज़ाइन अप्रूवल'},
+      {key:'material', title:'Raw Material / Printing', hi:'कच्चा माल / प्रिंटिंग'},
+      {key:'workshop', title:'Workshop Work', hi:'वर्कशॉप में काम'},
+      {key:'testing', title:'Testing & QC', hi:'टेस्टिंग और क्वालिटी चेक'},
+      {key:'transport', title:'Ready to Transport', hi:'ट्रांसपोर्ट के लिए तैयार'},
+      {key:'installation', title:'Final Installation', hi:'फाइनल इंस्टॉलेशन'}
+    ];
+
+    let allClients = JSON.parse(localStorage.getItem('ray_clients')||'{}');
+    let current = null;
+    let adminMode = false;
+
+    function findClient(){
+      const key = document.getElementById('clientSearch').value.trim().toLowerCase();
+      if(!allClients[key]){
+        alert('No record found for this customer.');
+        return;
+      }
+      current = allClients[key];
+      showTracker();
+    }
+
+    function adminLogin(){
+      const pass = document.getElementById('adminPass').value;
+      if(pass==='ray@2025'){
+        adminMode = true;
+        const name = prompt('Enter Client Name or Mobile to Edit/Create:').trim().toLowerCase();
+        if(!name) return;
+        if(!allClients[name]) allClients[name] = createBlankClient(name);
+        current = allClients[name];
+        showTracker();
+      }else{
+        alert('Incorrect password!');
+      }
+    }
+
+    function createBlankClient(name){
+      const st={};
+      STAGES.forEach(s=>st[s.key]='pending');
+      return {orderId:'ORD-'+Math.floor(Math.random()*9000+1000),clientName:name,deliveryDate:'--/--/----',note:'',stages:st,updated:'-'};
+    }
+
+    function showTracker(){
+      document.getElementById('loginCard').style.display='none';
+      document.getElementById('trackerCard').style.display='block';
+      render();
+      document.getElementById('adminButtons').style.display=adminMode?'flex':'none';
+    }
+
+    function render(){
+      document.getElementById('orderId').innerText=current.orderId;
+      document.getElementById('clientName').innerText=current.clientName;
+      document.getElementById('deliveryDate').innerText=current.deliveryDate;
+      document.getElementById('lastUpdated').innerText=current.updated;
+      document.getElementById('note').value=current.note;
+
+      const cont=document.getElementById('stages');
+      cont.innerHTML='';
+      let done=0;
+      STAGES.forEach(s=>{
+        const st=current.stages[s.key];
+        if(st==='done')done++;
+        const div=document.createElement('div');
+        div.className='stage';
+        div.innerHTML=`<h3>${s.title} <span class='small'>(${s.hi})</span></h3>
+        <div class='status ${st==='pending'?'s-pending':st==='inprogress'?'s-inprogress':'s-done'}'>${st==='pending'?'Pending':st==='inprogress'?'In Process':'Completed'}</div>
+        ${adminMode?`<div style='display:flex;gap:6px;'>
+          <button class='btn-primary' onclick="toggleStatus('${s.key}')">Toggle</button>
+          <button class='btn-ghost' onclick="setInProgress('${s.key}')">In Progress</button>
+        </div>`:''}`;
+        cont.appendChild(div);
+      });
+      const percent=Math.round((done/STAGES.length)*100);
+      document.getElementById('progressBar').style.width=percent+'%';
+      document.getElementById('percentTxt').innerText=percent+'%';
+    }
+
+    function save(){
+      current.updated=new Date().toLocaleString();
+      allClients[current.clientName.toLowerCase()]=current;
+      localStorage.setItem('ray_clients',JSON.stringify(allClients));
+      render();
+      alert('Data Saved Locally!');
+    }
+
+    function toggleStatus(k){
+      current.stages[k]=current.stages[k]==='done'?'pending':'done';
+      save();
+    }
+    function setInProgress(k){current.stages[k]='inprogress';save();}
+
+    document.getElementById('saveBtn').onclick=()=>{
+      current.orderId=prompt('Enter Order ID:',current.orderId)||current.orderId;
+      current.clientName=prompt('Enter Client Name:',current.clientName)||current.clientName;
+      current.deliveryDate=prompt('Enter Expected Delivery Date (DD/MM/YYYY):',current.deliveryDate)||current.deliveryDate;
+      current.note=document.getElementById('note').value;
+      save();
+    };
+
+    document.getElementById('resetBtn').onclick=()=>{
+      if(confirm('Reset all data?')){
+        STAGES.forEach(s=>current.stages[s.key]='pending');
+        current.note='';
+        current.updated='-';
+        save();
+      }
+    };
+
+    document.getElementById('copyBtn').onclick=()=>{
+      const lines=[`🌟 *Work Progress Update*`,`Order ID: ${current.orderId}`,`Client: ${current.clientName}`,`Expected Delivery: ${current.deliveryDate}`,''];
+      STAGES.forEach(s=>{
+        const st=current.stages[s.key];
+        const emoji=st==='done'?'✅':st==='inprogress'?'🔄':'⏳';
+        const txt=st==='done'?'Completed':st==='inprogress'?'In Process':'Pending';
+        lines.push(`${emoji} ${s.hi} — ${txt}`);
+      });
+      if(current.note){lines.push('',`📝 *Note:* ${current.note}`);}
+      lines.push('',`— Ray Services`);
+      navigator.clipboard.writeText(lines.join('\n'));
+      alert('Copied for WhatsApp!');
+    };
+
+    document.getElementById('note').onblur=()=>{current.note=document.getElementById('note').value;save();};
+  </script>
+</body>
+</html>
