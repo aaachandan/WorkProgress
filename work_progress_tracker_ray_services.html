@@ -1,219 +1,163 @@
 <!doctype html>
 <html lang="hi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ray Services - Work Progress Tracker</title>
-  <style>
-    :root{
-      --bg:#f4f7fb;
-      --card:#fff;
-      --primary:#007bff;
-      --accent:#28a745;
-      --border:#e3e8ef;
-    }
-    body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0;color:#222;}
-    .container{max-width:900px;margin:40px auto;padding:20px;}
-    header{text-align:center;margin-bottom:20px;}
-    h1{margin:0;font-size:26px;color:var(--primary);}
-    .small{color:#555;font-size:14px;}
-    .card{background:var(--card);border-radius:16px;padding:24px;box-shadow:0 6px 20px rgba(0,0,0,0.08);}
-    .details{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:20px;}
-    .details div{flex:1 1 250px;}
-    .detail-item span{font-weight:600;color:#333;}
-    .progress-bar{height:14px;background:#e9edf5;border-radius:10px;overflow:hidden;margin-top:5px;}
-    .progress-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),#4a90e2);width:0%;transition:width .4s;}
-    .stages{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
-    .stage{border:1px solid var(--border);padding:14px;border-radius:12px;background:#fdfdfd;display:flex;flex-direction:column;gap:10px;}
-    .stage h3{margin:0;font-size:16px;color:#222;}
-    .status{padding:6px 10px;border-radius:8px;font-weight:600;width:max-content;}
-    .s-pending{background:#FFF7E6;color:#8a6a00;}
-    .s-inprogress{background:#E8F0FF;color:var(--primary);}
-    .s-done{background:#EAF9EE;color:var(--accent);}
-    button{cursor:pointer;padding:7px 12px;border:none;border-radius:8px;font-weight:500;}
-    .btn-primary{background:var(--primary);color:#fff;}
-    .btn-ghost{background:transparent;color:var(--primary);border:1px solid #d0dbff;}
-    textarea{width:100%;height:100px;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:10px;}
-    footer{margin-top:20px;text-align:center;color:#666;font-size:14px;}
-    #loginCard input{width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid var(--border);}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Ray Services - Work Progress</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--primary:#007bff;--accent:#28a745;--muted:#888;}
+body{font-family:Inter,Poppins,sans-serif;background:var(--bg);margin:0;color:#222;}
+.wrap{max-width:760px;margin:36px auto;padding:18px;}
+.card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(10,20,40,0.06);}
+h1{margin:0 0 6px;color:var(--primary);font-size:20px}
+p.small{margin:0;color:var(--muted);font-size:13px}
+.search{display:flex;gap:8px;margin-top:14px}
+input[type="text"], input[type="password"]{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;font-size:15px}
+button{padding:10px 14px;border-radius:8px;border:none;background:linear-gradient(90deg,var(--primary),#0a66d6);color:#fff;cursor:pointer}
+.result{margin-top:18px}
+.meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.meta .item{font-size:14px;color:#333}
+.progress-wrap{margin-top:8px}
+.bar{height:14px;background:#eee;border-radius:999px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#ff7a00);transition:width .45s}
+.stages{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.stage{padding:10px;border-radius:10px;border:1px solid #f0f2f6;background:#fff;display:flex;flex-direction:column;gap:8px}
+.stage .name{font-weight:700}
+.chip{display:inline-block;padding:6px 8px;border-radius:8px;font-weight:700;font-size:13px}
+.pending{background:#fff7e6;color:#8a6a00;border:1px solid #fdeacb}
+.inprogress{background:#eaf2ff;color:#0b59d6;border:1px solid #dbe9ff}
+.done{background:#e9fbef;color:#1b7a2f;border:1px solid #daf6de}
+.note{margin-top:12px;padding:10px;border-radius:8px;background:#f8f9fb;border-left:4px solid #007bff}
+.notfound{padding:12px;text-align:center;color:#b00020}
+.footer{margin-top:16px;text-align:center;color:#666;font-size:13px}
+.adminControls{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+@media(max-width:520px){.stages{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Ray Services — Work Progress Tracker</h1>
-      <p class="small">ग्राहक और एडमिन दोनों के लिए आसान प्रगति ट्रैकिंग सिस्टम</p>
-    </header>
+<div class="wrap">
+<div class="card">
+<h1>🔍 Work Progress — Ray Services</h1>
+<p class="small">अपना नाम या मोबाइल डालकर अपने ऑर्डर की स्थिति देखें</p>
 
-    <!-- Customer Login -->
-    <div class="card" id="loginCard">
-      <h3>🔍 Work Progress Check (Customer View)</h3>
-      <input type="text" id="clientSearch" placeholder="Enter Client Name or Mobile Number">
-      <button class="btn-primary" onclick="findClient()">Check Progress</button>
-      <hr>
-      <h3>🛠️ Admin Login</h3>
-      <input type="password" id="adminPass" placeholder="Enter Admin Password">
-      <button class="btn-ghost" onclick="adminLogin()">Login as Admin</button>
-    </div>
+<div class="search">
+<input id="q" type="text" placeholder="Name or Mobile number (e.g., chandan OR 9876543210)">
+<button id="btn">Check</button>
+</div>
 
-    <!-- Work Tracker Card -->
-    <div class="card" id="trackerCard" style="display:none;">
-      <div class="details">
-        <div class="detail-item"><span>Order ID:</span> <span id="orderId">ORD-0001</span></div>
-        <div class="detail-item"><span>Client Name:</span> <span id="clientName">[Client Name]</span></div>
-        <div class="detail-item"><span>Expected Delivery:</span> <span id="deliveryDate">--/--/----</span></div>
-        <div class="detail-item"><span>Last Updated:</span> <span id="lastUpdated">-</span></div>
-      </div>
+<div style="margin-top:12px">
+<input id="adminPass" type="password" placeholder="Admin Password (for update)">
+<button id="adminBtn" style="margin-top:6px;background:#666">Admin Login</button>
+</div>
 
-      <div>
-        <div class="small">Overall Progress</div>
-        <div class="progress-bar"><i id="progressBar"></i></div>
-        <div class="small" style="text-align:right;margin-top:4px;" id="percentTxt">0%</div>
-      </div>
+<div id="out" class="result"></div>
+<div class="footer">Developed by <strong>Ray Services</strong></div>
+</div>
+</div>
 
-      <div class="stages" id="stages"></div>
+<script>
+const API_URL="https://script.google.com/macros/s/AKfycbydq0a0ow7xMLK0z8P-FZSzYCif4GVY05rPuGd6IcN-RWs10OcU1ImKzLZSWTufHZV5/exec";
+const btn=document.getElementById('btn');
+const adminBtn=document.getElementById('adminBtn');
+const q=document.getElementById('q');
+const passField=document.getElementById('adminPass');
+const out=document.getElementById('out');
+let isAdmin=false;
+let currentData=null;
 
-      <div>
-        <label class="small">Notes for Customer:</label>
-        <textarea id="note" placeholder="यदि आप ग्राहक के लिए कोई संदेश जोड़ना चाहते हैं तो यहाँ लिखें..."></textarea>
-      </div>
+btn.addEventListener('click',()=>checkStatus());
+q.addEventListener('keyup',e=>{if(e.key==='Enter')checkStatus();});
+adminBtn.addEventListener('click',()=>{ if(passField.value==='ray@2025'){isAdmin=true;alert('Admin mode enabled'); checkStatus(); } else alert('Incorrect password!'); });
 
-      <div id="adminButtons" style="display:none;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px;">
-        <button class="btn-primary" id="saveBtn">💾 Save</button>
-        <button class="btn-ghost" id="resetBtn">♻️ Reset</button>
-        <button class="btn-primary" id="copyBtn">📋 Copy WhatsApp Text</button>
-      </div>
+async function checkStatus(){
+  const v=q.value.trim(); if(!v){alert('कृपया नाम या मोबाइल नंबर दर्ज करें'); return;}
+  out.innerHTML='<div style="padding:10px">⏳ कृपया प्रतीक्षा करें...</div>';
+  try{
+    const url=`${API_URL}?name=${encodeURIComponent(v)}&mobile=${encodeURIComponent(v)}`;
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('Network error');
+    const data=await res.json();
+    if(data.error){out.innerHTML='<div class="notfound">❌ रिकॉर्ड नहीं मिला</div>'; return;}
+    currentData=data;
+    render();
+  }catch(e){console.error(e); out.innerHTML='<div class="notfound">⚠️ डेटा लाने में त्रुटि</div>';}
+}
 
-      <footer>Developed by <strong>Ray Services</strong></footer>
-    </div>
-  </div>
+function render(){
+  if(!currentData) return;
+  const stages=[
+    {key:'advance',label:'Advance Payment'},
+    {key:'design',label:'Design Approval'},
+    {key:'material',label:'Raw Material / Printing'},
+    {key:'workshop',label:'Working on Workshop'},
+    {key:'testing',label:'Testing'},
+    {key:'transport',label:'Ready to Transport'},
+    {key:'installation',label:'Final Installation'}
+  ];
+  let doneCount=0; stages.forEach(s=>{if((currentData[s.key]||'').toLowerCase()==='done')doneCount++;});
+  const percent=Math.round((doneCount/stages.length)*100);
 
-  <script>
-    const STAGES = [
-      {key:'advance', title:'Advance Payment', hi:'एडवांस भुगतान'},
-      {key:'design', title:'Design Approval', hi:'डिज़ाइन अप्रूवल'},
-      {key:'material', title:'Raw Material / Printing', hi:'कच्चा माल / प्रिंटिंग'},
-      {key:'workshop', title:'Workshop Work', hi:'वर्कशॉप में काम'},
-      {key:'testing', title:'Testing & QC', hi:'टेस्टिंग और क्वालिटी चेक'},
-      {key:'transport', title:'Ready to Transport', hi:'ट्रांसपोर्ट के लिए तैयार'},
-      {key:'installation', title:'Final Installation', hi:'फाइनल इंस्टॉलेशन'}
-    ];
+  let html=`<div class="meta">
+  <div class="item"><strong>${escape(currentData.client_name)}</strong></div>
+  <div class="item">Order: ${escape(currentData.order_id)}</div>
+  <div class="item">Mobile: ${escape(currentData.mobile_number)}</div>
+  <div class="item">Delivery: ${escape(currentData.delivery_date)}</div></div>`;
 
-    let allClients = JSON.parse(localStorage.getItem('ray_clients')||'{}');
-    let current = null;
-    let adminMode = false;
+  html+=`<div class="progress-wrap"><div style="display:flex;justify-content:space-between">
+  <div style="font-size:13px;color:#555">Progress</div><div style="font-size:13px;color:#555">${percent}%</div></div>
+  <div class="bar" style="margin-top:8px"><i style="width:${percent}%"></i></div></div>`;
 
-    function findClient(){
-      const key = document.getElementById('clientSearch').value.trim().toLowerCase();
-      if(!allClients[key]){
-        alert('No record found for this customer.');
-        return;
-      }
-      current = allClients[key];
-      showTracker();
+  html+='<div class="stages">';
+  stages.forEach(s=>{
+    let val=(currentData[s.key]||'').toLowerCase(), cls='pending', lbl='Pending';
+    if(val==='done'){cls='done'; lbl='Completed';} else if(val==='inprogress'){cls='inprogress'; lbl='In Progress';}
+    html+=`<div class="stage"><div class="name">${s.label}</div><div><span class="chip ${cls}">${lbl}</span></div>`;
+    if(isAdmin){
+      html+=`<div class="adminControls">
+        <button onclick="toggleStage('${s.key}')">Toggle</button>
+        <button onclick="setInProgress('${s.key}')">In Progress</button>
+      </div>`;
     }
+    html+='</div>';
+  });
+  html+='</div>';
+  html+=`<div class="note"><strong>Note:</strong> <textarea id="noteArea" style="width:100%;padding:6px">${escape(currentData.note||'')}</textarea></div>
+  <div style="margin-top:6px;font-size:12px;color:#666">Last updated: ${escape(currentData.updated||'-')}</div>`;
+  if(isAdmin) html+=`<div style="margin-top:8px"><button onclick="saveData()" style="background:#007bff;color:#fff;padding:8px 12px;border-radius:8px">Save Updates</button></div>`;
+  html+=whatsappButtonHtml(currentData);
+  out.innerHTML=html;
+}
 
-    function adminLogin(){
-      const pass = document.getElementById('adminPass').value;
-      if(pass==='ray@2025'){
-        adminMode = true;
-        const name = prompt('Enter Client Name or Mobile to Edit/Create:').trim().toLowerCase();
-        if(!name) return;
-        if(!allClients[name]) allClients[name] = createBlankClient(name);
-        current = allClients[name];
-        showTracker();
-      }else{
-        alert('Incorrect password!');
-      }
-    }
+function toggleStage(k){if(!currentData) return; currentData[k]=currentData[k]==='done'?'pending':'done'; render();}
+function setInProgress(k){if(!currentData) return; currentData[k]='inprogress'; render();}
+function saveData(){
+  if(!currentData) return;
+  currentData.note=document.getElementById('noteArea').value;
+  fetch(API_URL,{
+    method:'POST',
+    body: JSON.stringify(currentData),
+    headers:{'Content-Type':'application/json'}
+  }).then(r=>r.json()).then(res=>{
+    alert(res.message||'Saved to Google Sheet');
+  }).catch(err=>{alert('Error saving data');console.error(err);});
+}
 
-    function createBlankClient(name){
-      const st={};
-      STAGES.forEach(s=>st[s.key]='pending');
-      return {orderId:'ORD-'+Math.floor(Math.random()*9000+1000),clientName:name,deliveryDate:'--/--/----',note:'',stages:st,updated:'-'};
-    }
+function whatsappButtonHtml(data){
+  if(!data) return '';
+  const keys=['advance','design','material','workshop','testing','transport','installation'];
+  let lines=['🔔 Work Progress Update',`Order: ${data.order_id}`,`Client: ${data.client_name}`,`Delivery: ${data.delivery_date}`,''];
+  keys.forEach(k=>{
+    let v=(data[k]||'').toLowerCase();
+    const emoji=v==='done'?'✅':v==='inprogress'?'🔄':'⏳';
+    const lbl=v==='done'?'Completed':v==='inprogress'?'In Progress':'Pending';
+    lines.push(`${emoji} ${k.replace(/_/g,' ')} — ${lbl}`);
+  });
+  if(data.note) lines.push('',`📝 Note: ${data.note}`);
+  return `<div style="margin-top:12px"><a target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}">
+  <button style="background:#25D366;color:#fff;padding:8px 12px;border-radius:8px">Share on WhatsApp</button></a></div>`;
+}
 
-    function showTracker(){
-      document.getElementById('loginCard').style.display='none';
-      document.getElementById('trackerCard').style.display='block';
-      render();
-      document.getElementById('adminButtons').style.display=adminMode?'flex':'none';
-    }
-
-    function render(){
-      document.getElementById('orderId').innerText=current.orderId;
-      document.getElementById('clientName').innerText=current.clientName;
-      document.getElementById('deliveryDate').innerText=current.deliveryDate;
-      document.getElementById('lastUpdated').innerText=current.updated;
-      document.getElementById('note').value=current.note;
-
-      const cont=document.getElementById('stages');
-      cont.innerHTML='';
-      let done=0;
-      STAGES.forEach(s=>{
-        const st=current.stages[s.key];
-        if(st==='done')done++;
-        const div=document.createElement('div');
-        div.className='stage';
-        div.innerHTML=`<h3>${s.title} <span class='small'>(${s.hi})</span></h3>
-        <div class='status ${st==='pending'?'s-pending':st==='inprogress'?'s-inprogress':'s-done'}'>${st==='pending'?'Pending':st==='inprogress'?'In Process':'Completed'}</div>
-        ${adminMode?`<div style='display:flex;gap:6px;'>
-          <button class='btn-primary' onclick="toggleStatus('${s.key}')">Toggle</button>
-          <button class='btn-ghost' onclick="setInProgress('${s.key}')">In Progress</button>
-        </div>`:''}`;
-        cont.appendChild(div);
-      });
-      const percent=Math.round((done/STAGES.length)*100);
-      document.getElementById('progressBar').style.width=percent+'%';
-      document.getElementById('percentTxt').innerText=percent+'%';
-    }
-
-    function save(){
-      current.updated=new Date().toLocaleString();
-      allClients[current.clientName.toLowerCase()]=current;
-      localStorage.setItem('ray_clients',JSON.stringify(allClients));
-      render();
-      alert('Data Saved Locally!');
-    }
-
-    function toggleStatus(k){
-      current.stages[k]=current.stages[k]==='done'?'pending':'done';
-      save();
-    }
-    function setInProgress(k){current.stages[k]='inprogress';save();}
-
-    document.getElementById('saveBtn').onclick=()=>{
-      current.orderId=prompt('Enter Order ID:',current.orderId)||current.orderId;
-      current.clientName=prompt('Enter Client Name:',current.clientName)||current.clientName;
-      current.deliveryDate=prompt('Enter Expected Delivery Date (DD/MM/YYYY):',current.deliveryDate)||current.deliveryDate;
-      current.note=document.getElementById('note').value;
-      save();
-    };
-
-    document.getElementById('resetBtn').onclick=()=>{
-      if(confirm('Reset all data?')){
-        STAGES.forEach(s=>current.stages[s.key]='pending');
-        current.note='';
-        current.updated='-';
-        save();
-      }
-    };
-
-    document.getElementById('copyBtn').onclick=()=>{
-      const lines=[`🌟 *Work Progress Update*`,`Order ID: ${current.orderId}`,`Client: ${current.clientName}`,`Expected Delivery: ${current.deliveryDate}`,''];
-      STAGES.forEach(s=>{
-        const st=current.stages[s.key];
-        const emoji=st==='done'?'✅':st==='inprogress'?'🔄':'⏳';
-        const txt=st==='done'?'Completed':st==='inprogress'?'In Process':'Pending';
-        lines.push(`${emoji} ${s.hi} — ${txt}`);
-      });
-      if(current.note){lines.push('',`📝 *Note:* ${current.note}`);}
-      lines.push('',`— Ray Services`);
-      navigator.clipboard.writeText(lines.join('\n'));
-      alert('Copied for WhatsApp!');
-    };
-
-    document.getElementById('note').onblur=()=>{current.note=document.getElementById('note').value;save();};
-  </script>
+function escape(str){return String(str||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+</script>
 </body>
 </html>
